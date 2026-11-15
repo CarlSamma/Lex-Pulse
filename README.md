@@ -63,10 +63,7 @@ APP_URL="http://localhost:3000"
 
 4. Salva il file `.env` (assicurati che non diventi `.env.txt` se usi il Blocco Note di Windows: in *Salva con nome* imposta *Salva come: Tutti i file (`*.*`)*).
 
-*(Se il file `.env` non fosse presente, puoi crearlo da terminale copiando `.env.example`:)*
-```cmd
-copy .env.example .env
-```
+Se il file `.env` non fosse presente, crealo manualmente nella cartella principale e inserisci le variabili indicate sopra.
 
 ---
 
