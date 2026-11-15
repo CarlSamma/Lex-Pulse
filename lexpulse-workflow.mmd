@@ -1,0 +1,53 @@
+flowchart TD
+    U["Avvocato / utente"] --> SRC{"Sceglie la sorgente"}
+    SRC -->|Ricerca Web| WEB["Query o ricerca normativa online"]
+    SRC -->|Documento| FILE["Carica PDF o TXT"]
+    SRC -->|Testo libero| TEXT["Incolla il testo giuridico"]
+    SRC -->|Esempio guidato| PRESET["Seleziona un caso dimostrativo"]
+
+    WEB --> INPUT["Sorgente da analizzare"]
+    FILE --> INPUT
+    TEXT --> INPUT
+    PRESET --> INPUT
+    U --> CLIENTS["Configura i clienti<br/>attiva almeno un profilo"]
+    U --> MODEL["Seleziona il modello AI"]
+
+    INPUT --> CHECK{"Input valido<br/>e almeno un cliente attivo?"}
+    CLIENTS --> CHECK
+    MODEL --> CHECK
+    CHECK -->|No| VALIDATION_ERROR["Mostra errore di validazione"]
+    CHECK -->|Si| START["Cerca Novita / Avvia Pipeline Completa"]
+
+    START --> AUTH{"Configurazione AI disponibile?"}
+    AUTH -->|Chiave OpenRouter presente| OR["OpenRouter<br/>modello selezionato"]
+    AUTH -->|Senza OpenRouter:<br/>Gemini selezionato e chiave Gemini presente| GEMINI["Gemini fallback"]
+    AUTH -->|Credenziali assenti| AUTH_ERROR["Mostra errore credenziali"]
+
+    OR --> STEP1["Passaggio 1<br/>Trigger e classificazione"]
+    GEMINI --> STEP1
+    STEP1 --> C1["Classificazione<br/>materia, estremi, destinatari,<br/>obblighi, indirizzi e facolta"]
+    C1 --> STEP2["Passaggio 2<br/>Valutazione d'impatto"]
+    CLIENTS --> STEP2
+    STEP2 --> C2["Impatto per cliente<br/>applicabilita, rischi, gap<br/>e azioni operative"]
+    C2 --> STEP3["Passaggio 3<br/>Generazione deliverable"]
+    STEP3 --> OUTPUT["1 Nota Tecnica Interna<br/>+ 1 alert per ogni cliente attivo"]
+    OUTPUT --> REVIEW["Professionista rivede e modifica<br/>risultati e profili cliente"]
+
+    REVIEW --> CHOICE{"Serve una revisione?"}
+    CHOICE -->|No| EXPORT["Consulta, modifica ed esporta<br/>i deliverable in Markdown o PDF"]
+    CHOICE -->|Rivalutare l'impatto| STEP2
+    CHOICE -->|Rigenerare solo i deliverable| STEP3
+
+    STEP1 -. errore .-> ERROR["Mostra errore e interrompe la pipeline"]
+    STEP2 -. errore .-> ERROR
+    STEP3 -. errore .-> ERROR
+
+    NOTE["La pipeline completa esegue Step 1, 2 e 3 in sequenza.<br/>La revisione umana non e una pausa obbligatoria prima dello Step 3."]
+    NOTE -.-> STEP3
+
+    classDef action fill:#1e3a8a,color:#ffffff,stroke:#172e6e
+    classDef result fill:#ecfdf5,color:#14532d,stroke:#16a34a
+    classDef error fill:#fef2f2,color:#991b1b,stroke:#dc2626
+    class START,STEP1,STEP2,STEP3 action
+    class C1,C2,OUTPUT,EXPORT result
+    class VALIDATION_ERROR,AUTH_ERROR,ERROR error

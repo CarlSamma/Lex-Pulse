@@ -51,6 +51,14 @@ function getGeminiClient(): GoogleGenAI | null {
   });
 }
 
+function getOpenRouterKey(): string | null {
+  const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+  if (!apiKey || /^(?:MY_|YOUR_|<|sk-or-v1-LA_TUA_CHIAVE)/i.test(apiKey)) {
+    return null;
+  }
+  return apiKey;
+}
+
 function parseJsonSafely<T>(rawText: string | undefined, fallbackMsg: string): T {
   if (!rawText) {
     throw new Error(fallbackMsg);
@@ -130,10 +138,10 @@ async function callOpenRouter(params: {
   expectJson?: boolean;
   plugins?: Record<string, unknown>[];
 }): Promise<{ text: string; citations: WebSourceRef[] }> {
-  const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
+  const openRouterKey = getOpenRouterKey();
   if (!openRouterKey) {
     throw new Error(
-      'Chiave OPENROUTER_API_KEY non configurata nei Secrets del server. Inseriscila nel pannello Settings > Secrets per utilizzare i 6 modelli OpenRouter.'
+      'OPENROUTER_API_KEY mancante o ancora impostata sul segnaposto. Inserisci una chiave API OpenRouter reale nel file .env e riavvia il server.'
     );
   }
 
@@ -497,7 +505,7 @@ async function startServer() {
       ok: true,
       service: 'lexpulse-legal-intelligence',
       providers: {
-        openrouter: Boolean(process.env.OPENROUTER_API_KEY?.trim()),
+        openrouter: Boolean(getOpenRouterKey()),
         geminiFallback: Boolean(process.env.GEMINI_API_KEY?.trim()),
       },
     });
@@ -514,7 +522,7 @@ async function startServer() {
       }
 
       const modelId = resolveModelId(body.modelId);
-      const hasOpenRouter = Boolean(process.env.OPENROUTER_API_KEY?.trim());
+      const hasOpenRouter = Boolean(getOpenRouterKey());
       const geminiFallback =
         !hasOpenRouter && modelId === 'google/gemini-4-hydrogen'
           ? getGeminiClient()
@@ -706,7 +714,7 @@ ${CLASSIFICATION_JSON_CONTRACT}`;
       }
 
       const modelId = resolveModelId(rawModelId);
-      const hasOpenRouter = Boolean(process.env.OPENROUTER_API_KEY?.trim());
+      const hasOpenRouter = Boolean(getOpenRouterKey());
       const geminiFallback =
         !hasOpenRouter && modelId === 'google/gemini-4-hydrogen'
           ? getGeminiClient()
@@ -813,7 +821,7 @@ ${IMPACT_JSON_CONTRACT}`;
 
       const activeClients = clients.filter((c) => c.attivo);
       const modelId = resolveModelId(rawModelId);
-      const hasOpenRouter = Boolean(process.env.OPENROUTER_API_KEY?.trim());
+      const hasOpenRouter = Boolean(getOpenRouterKey());
       const geminiFallback =
         !hasOpenRouter && modelId === 'google/gemini-4-hydrogen'
           ? getGeminiClient()
@@ -912,7 +920,7 @@ ${DELIVERABLES_JSON_CONTRACT}`;
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`LexPulse server active at http://0.0.0.0:${PORT}`);
+    console.log(`LexPulse server active at http://localhost:${PORT}`);
   });
 }
 

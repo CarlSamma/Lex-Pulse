@@ -80,7 +80,7 @@ npm run dev
 
 Quando compare nel terminale il messaggio:
 ```text
-LexPulse server active at http://0.0.0.0:3000
+LexPulse server active at http://localhost:3000
 ```
 apri il browser (Chrome, Edge o Firefox) all’indirizzo:
 **[http://localhost:3000](http://localhost:3000)**
