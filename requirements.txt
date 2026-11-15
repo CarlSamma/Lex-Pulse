@@ -1,0 +1,49 @@
+# LexPulse · Legal Intelligence Agent (Hackathon per Giuristi · Traccia 2)
+# Nota tecnica: il progetto è basato su Node.js + TypeScript (React + Express),
+# pertanto il file principale per l'installazione dei pacchetti è package.json (`npm install`).
+# Questo file riepiloga tutti i requisiti di sistema, le dipendenze e le variabili d'ambiente.
+
+# === 1. RUNTIME E STRUMENTI DI SISTEMA ===
+# Node.js >= 20.x (consigliato 22.x LTS)
+# npm >= 10.x
+
+# === 2. VARIABILI D'AMBIENTE (Settings > Secrets) ===
+# OPENROUTER_API_KEY   -> Chiave API OpenRouter per i 6 modelli LLM:
+#                         - anthropic/claude-sonnet-5.5
+#                         - openai/gpt-6.1-terra
+#                         - google/gemini-4-hydrogen
+#                         - deepseek/deepseek-v4-pro
+#                         - mistralai/mistral-large-4-0
+#                         - meta-llama/llama-4-maverick
+# GEMINI_API_KEY       -> Opzionale (fallback server-side per google/gemini-4-hydrogen)
+# APP_URL              -> URL pubblico dell'applicazione
+
+# === 3. DIPENDENZE RUNTIME (package.json -> dependencies) ===
+# @google/genai@^3.3.0
+# @tailwindcss/vite@^4.3.3
+# @vitejs/plugin-react@^6.1.1
+# dotenv@^17.2.3
+# express@^4.21.2
+# lucide-react@^0.546.0
+# motion@^12.23.24
+# react@^19.0.1
+# react-dom@^19.0.1
+# vite@^8.3.0
+
+# === 4. DIPENDENZE DI SVILUPPO E BUILD (package.json -> devDependencies) ===
+# @types/express@^4.17.21
+# @types/node@^22.14.0
+# @types/react@^19.3.0
+# @types/react-dom@^19.3.0
+# autoprefixer@^10.4.21
+# esbuild@^0.25.0
+# tailwindcss@^4.3.3
+# tsx@^4.21.0
+# typescript@^7.0.2
+
+# === 5. COMANDI DI AVVIO ===
+# Installazione: npm install
+# Sviluppo:      npm run dev      (server Express + Vite su porta 3000)
+# Build:         npm run build
+# Controllo TS:  npm run lint
+# Produzione:    npm start
