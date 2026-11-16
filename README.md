@@ -97,6 +97,48 @@ apri il browser (Chrome, Edge o Firefox) all’indirizzo:
 
 ---
 
+## Deploy su Vercel
+
+> **Adattamento necessario prima del deploy:** il progetto attuale avvia Express come server persistente da `server.ts` e usa lo stesso file per il middleware di sviluppo Vite e per servire `dist/`. Vercel esegue le API come funzioni serverless e il preset Vite pubblica il frontend statico: il deploy diretto del repository non rende automaticamente disponibili le route Express. Prima di collegare il progetto, separare le route API dall'avvio locale, esporle tramite una funzione Node in `api/` (ad esempio un handler catch-all per `/api/*`) e lasciare `npm run dev` come avvio locale. La funzione non deve avviare `app.listen()`.
+
+### 1. Configurazione del progetto
+
+1. Pubblica il repository su GitHub e, dalla dashboard di [Vercel](https://vercel.com), importa il repository.
+2. Imposta la directory radice del progetto e seleziona il preset **Vite**.
+3. Usa queste impostazioni di build:
+
+   | Impostazione | Valore |
+   | :--- | :--- |
+   | Install Command | `npm ci` |
+   | Build Command | `npm run build` |
+   | Output Directory | `dist` |
+   | Node.js Version | `22.x` |
+
+4. Configura il fallback SPA verso `index.html` per le route del frontend; le route `/api/*` devono raggiungere la funzione serverless e non essere riscritte verso la pagina HTML.
+
+### 2. Variabili d'ambiente
+
+In **Project Settings → Environment Variables**, aggiungi:
+
+| Variabile | Obbligatoria | Valore |
+| :--- | :--- | :--- |
+| `OPENROUTER_API_KEY` | Sì | Chiave API OpenRouter |
+| `GEMINI_API_KEY` | No | Chiave Gemini, se si vuole abilitare il fallback |
+| `APP_URL` | Consigliata | URL pubblico dell'app, ad esempio `https://<dominio-vercel>` |
+
+Imposta le chiavi per gli ambienti **Production**, **Preview** e/o **Development** che intendi usare. Mantieni le chiavi solo lato server: non usare il prefisso `VITE_` e non inserirle nel codice o in Git. Dopo aver modificato le variabili, avvia un nuovo deploy.
+
+### 3. Deploy e verifica
+
+1. Crea un deploy **Preview** e controlla che `/api/health` risponda correttamente.
+2. Verifica in sequenza le route `/api/pipeline/trigger`, `/api/pipeline/evaluate` e `/api/pipeline/deliverables`, usando le chiavi configurate.
+3. Prova il caricamento PDF anche con file grandi: il limite JSON locale di 25 MB non garantisce che una richiesta della stessa dimensione sia accettata da una funzione Vercel. Se i file superano il limite della piattaforma, occorre ridurre la dimensione o spostare il caricamento su storage esterno.
+4. Dopo la verifica della Preview, collega il dominio e promuovi il deploy a **Production**. Imposta `APP_URL` con l'URL definitivo.
+
+Per i deploy collegati a Git, Vercel crea Preview dai branch e dai pull request e aggiorna Production dal branch configurato nelle impostazioni del progetto.
+
+---
+
 ## Sicurezza e Note Operative
 - **Chiavi API solo lato server**: il file `.env` viene letto esclusivamente dal backend Express (`server.ts`); nessuna chiave viene mai esposta nel browser o nell’interfaccia utente.
 - **Non condividere il file `.env`** una volta inserita la tua chiave OpenRouter reale.
