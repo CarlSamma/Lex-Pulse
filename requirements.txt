@@ -15,11 +15,9 @@
 #                         - deepseek/deepseek-v4-pro
 #                         - mistralai/mistral-large-4-0
 #                         - meta-llama/llama-4-maverick
-# GEMINI_API_KEY       -> Opzionale (fallback server-side per google/gemini-4-hydrogen)
 # APP_URL              -> URL pubblico dell'applicazione
 
 # === 3. DIPENDENZE RUNTIME (package.json -> dependencies) ===
-# @google/genai@^3.3.0
 # @tailwindcss/vite@^4.3.3
 # @vitejs/plugin-react@^6.1.1
 # dotenv@^17.2.3

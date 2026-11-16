@@ -2,7 +2,5 @@
   "name": "III Lex Pulse · Legal Intelligence Agent",
   "description": "Pipeline modulare a tre passaggi per il monitoraggio normativo, la valutazione d\u0027impatto per enti pubblici e aziende e la redazione differenziata di Note Tecniche Interne e Alert Clienti.",
   "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
+  "majorCapabilities": []
 }

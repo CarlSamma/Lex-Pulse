@@ -3,7 +3,6 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
 import type {
   ClassificationResult,
   ClientEntity,
@@ -36,19 +35,6 @@ function resolveModelId(input?: string): LlmModelId {
     return input as LlmModelId;
   }
   return DEFAULT_MODEL_ID;
-}
-
-function getGeminiClient(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      },
-    },
-  });
 }
 
 function getOpenRouterKey(): string | null {
@@ -202,216 +188,6 @@ async function callOpenRouter(params: {
   return { text, citations };
 }
 
-const classificationSchema = {
-  type: Type.OBJECT,
-  properties: {
-    titoloAtto: { type: Type.STRING },
-    materiaPrincipale: { type: Type.STRING },
-    autorita: { type: Type.STRING },
-    estremiAdozione: { type: Type.STRING },
-    tipoAtto: { type: Type.STRING },
-    dataPubblicazione: { type: Type.STRING },
-    entrataInVigore: { type: Type.STRING },
-    ambitoSoggettivo: { type: Type.STRING },
-    quadroPrecettivo: {
-      type: Type.OBJECT,
-      properties: {
-        obblighi: { type: Type.STRING },
-        indirizzi: { type: Type.STRING },
-        facolta: { type: Type.STRING },
-      },
-      required: ['obblighi', 'indirizzi', 'facolta'],
-    },
-    precettiEstratti: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          paragrafo: { type: Type.STRING },
-          livelloVincolativita: { type: Type.STRING },
-          sintesi: { type: Type.STRING },
-          destinatario: { type: Type.STRING },
-        },
-        required: ['paragrafo', 'livelloVincolativita', 'sintesi', 'destinatario'],
-      },
-    },
-    riferimentiNormativiCollegati: {
-      type: Type.ARRAY,
-      items: { type: Type.STRING },
-    },
-    sintesiOggettiva: { type: Type.STRING },
-  },
-  required: [
-    'titoloAtto',
-    'materiaPrincipale',
-    'autorita',
-    'estremiAdozione',
-    'tipoAtto',
-    'dataPubblicazione',
-    'entrataInVigore',
-    'ambitoSoggettivo',
-    'quadroPrecettivo',
-    'precettiEstratti',
-    'riferimentiNormativiCollegati',
-    'sintesiOggettiva',
-  ],
-};
-
-const impactSchema = {
-  type: Type.OBJECT,
-  properties: {
-    sintesiImpattoStudio: { type: Type.STRING },
-    livelloComplessivoRischio: { type: Type.STRING },
-    cosaCambiaLunediStudio: {
-      type: Type.ARRAY,
-      items: { type: Type.STRING },
-    },
-    impattiPerCliente: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          clientId: { type: Type.STRING },
-          nomeCliente: { type: Type.STRING },
-          livelloUrgenza: { type: Type.STRING },
-          inquadramentoApplicabilita: { type: Type.STRING },
-          ruoloGiuridico: { type: Type.STRING },
-          gapPrincipali: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-          },
-          adempimentiObbligatori: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-          },
-          opzioniEScelteStrategiche: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-          },
-          cosaCambiaLunediCliente: { type: Type.STRING },
-          azioniImmediate: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-          },
-        },
-        required: [
-          'clientId',
-          'nomeCliente',
-          'livelloUrgenza',
-          'inquadramentoApplicabilita',
-          'ruoloGiuridico',
-          'gapPrincipali',
-          'adempimentiObbligatori',
-          'opzioniEScelteStrategiche',
-          'cosaCambiaLunediCliente',
-          'azioniImmediate',
-        ],
-      },
-    },
-  },
-  required: [
-    'sintesiImpattoStudio',
-    'livelloComplessivoRischio',
-    'cosaCambiaLunediStudio',
-    'impattiPerCliente',
-  ],
-};
-
-const deliverablesSchema = {
-  type: Type.OBJECT,
-  properties: {
-    notaTecnicaInterna: {
-      type: Type.OBJECT,
-      properties: {
-        intestazione: { type: Type.STRING },
-        data: { type: Type.STRING },
-        oggetto: { type: Type.STRING },
-        sintesiEsecutiva: { type: Type.STRING },
-        inquadramentoNormativo: { type: Type.STRING },
-        analisiDettagliataPerCliente: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              nomeCliente: { type: Type.STRING },
-              qualificazioneGiuridica: { type: Type.STRING },
-              profiliDiRischio: { type: Type.STRING },
-              adempimentiEDecorrenze: { type: Type.STRING },
-            },
-            required: [
-              'nomeCliente',
-              'qualificazioneGiuridica',
-              'profiliDiRischio',
-              'adempimentiEDecorrenze',
-            ],
-          },
-        },
-        cosaCambiaLunediMattinaStudio: { type: Type.STRING },
-        pianoAzioneStudioLunedi: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              azione: { type: Type.STRING },
-              clienteRiferimento: { type: Type.STRING },
-              priorita: { type: Type.STRING },
-              responsabileConsigliato: { type: Type.STRING },
-            },
-            required: [
-              'azione',
-              'clienteRiferimento',
-              'priorita',
-              'responsabileConsigliato',
-            ],
-          },
-        },
-      },
-      required: [
-        'intestazione',
-        'data',
-        'oggetto',
-        'sintesiEsecutiva',
-        'inquadramentoNormativo',
-        'analisiDettagliataPerCliente',
-        'cosaCambiaLunediMattinaStudio',
-        'pianoAzioneStudioLunedi',
-      ],
-    },
-    alertClienti: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          clientId: { type: Type.STRING },
-          nomeCliente: { type: Type.STRING },
-          destinatario: { type: Type.STRING },
-          oggettoEmail: { type: Type.STRING },
-          aperturaChiara: { type: Type.STRING },
-          cosaSuccedeSenzaTecnicismi: { type: Type.STRING },
-          cosaCambiaLunediMattina: { type: Type.STRING },
-          azioniConsigliatePassoPasso: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-          },
-          propostaSupportoStudio: { type: Type.STRING },
-        },
-        required: [
-          'clientId',
-          'nomeCliente',
-          'destinatario',
-          'oggettoEmail',
-          'aperturaChiara',
-          'cosaSuccedeSenzaTecnicismi',
-          'cosaCambiaLunediMattina',
-          'azioniConsigliatePassoPasso',
-          'propostaSupportoStudio',
-        ],
-      },
-    },
-  },
-  required: ['notaTecnicaInterna', 'alertClienti'],
-};
-
 const CLASSIFICATION_JSON_CONTRACT = `Restituisci ESCLUSIVAMENTE un oggetto JSON valido (nessun markdown o testo esterno) con questa struttura esatta:
 {
   "titoloAtto": "string",
@@ -506,7 +282,6 @@ async function startServer() {
       service: 'lexpulse-legal-intelligence',
       providers: {
         openrouter: Boolean(getOpenRouterKey()),
-        geminiFallback: Boolean(process.env.GEMINI_API_KEY?.trim()),
       },
     });
   });
@@ -522,11 +297,6 @@ async function startServer() {
       }
 
       const modelId = resolveModelId(body.modelId);
-      const hasOpenRouter = Boolean(getOpenRouterKey());
-      const geminiFallback =
-        !hasOpenRouter && modelId === 'google/gemini-4-hydrogen'
-          ? getGeminiClient()
-          : null;
 
       let rawResearchText = '';
       let fontiWeb: WebSourceRef[] = [];
@@ -536,39 +306,16 @@ async function startServer() {
           source.queryRicerca?.trim() ||
           'Ultime novità normative italiane ed europee Gazzetta Ufficiale decreti legge giurisprudenza rilevante imprese e PA';
 
-        if (geminiFallback) {
-          const searchResponse = await geminiFallback.models.generateContent({
-            model: 'gemini-4-hydrogen',
-            contents: `Cerca le novità normative, regolamentari, fiscali, giuslavoristiche o giurisprudenziali ufficiali più recenti e pertinenti rispetto a questa richiesta di monitoraggio legale: "${query}".
+        const webRes = await callOpenRouter({
+          modelId,
+          systemInstruction:
+            'Sei un analista multidisciplinare di monitoraggio legislativo e giurisprudenziale italiano ed europeo per uno studio legale. Tratti qualsiasi materia giuridica e riporti solo fatti verificati dalle fonti web trovate.',
+          userContent: `Cerca le novità normative, regolamentari, fiscali, giuslavoristiche o giurisprudenziali ufficiali più recenti e pertinenti rispetto a questa richiesta di monitoraggio legale: "${query}".
 Riporta con precisione: materia giuridica, titolo esatto dell'atto o della pronuncia, autorità o organo emittente, estremi (numero decreto/legge/sentenza/circolare), data di pubblicazione e decorrenza/entrata in vigore, soggetti destinatari, obblighi vincolanti vs facoltà o indirizzi, e riferimenti normativi collegati.`,
-            config: {
-              tools: [{ googleSearch: {} }],
-              systemInstruction:
-                'Sei un analista multidisciplinare di monitoraggio legislativo e giurisprudenziale italiano ed europeo per uno studio legale. Tratti qualsiasi materia giuridica e riporti solo fatti verificati dalle fonti trovate.',
-            },
-          });
-
-          rawResearchText = searchResponse.text ?? '';
-          const chunks =
-            searchResponse.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-          fontiWeb = chunks
-            .filter((c) => c.web?.uri)
-            .map((c) => ({
-              title: c.web?.title || c.web?.uri || 'Fonte istituzionale',
-              uri: c.web!.uri!,
-            }));
-        } else {
-          const webRes = await callOpenRouter({
-            modelId,
-            systemInstruction:
-              'Sei un analista multidisciplinare di monitoraggio legislativo e giurisprudenziale italiano ed europeo per uno studio legale. Tratti qualsiasi materia giuridica e riporti solo fatti verificati dalle fonti web trovate.',
-            userContent: `Cerca le novità normative, regolamentari, fiscali, giuslavoristiche o giurisprudenziali ufficiali più recenti e pertinenti rispetto a questa richiesta di monitoraggio legale: "${query}".
-Riporta con precisione: materia giuridica, titolo esatto dell'atto o della pronuncia, autorità o organo emittente, estremi (numero decreto/legge/sentenza/circolare), data di pubblicazione e decorrenza/entrata in vigore, soggetti destinatari, obblighi vincolanti vs facoltà o indirizzi, e riferimenti normativi collegati.`,
-            plugins: [{ id: 'web', max_results: 5 }],
-          });
-          rawResearchText = webRes.text;
-          fontiWeb = webRes.citations;
-        }
+          plugins: [{ id: 'web', max_results: 5 }],
+        });
+        rawResearchText = webRes.text;
+        fontiWeb = webRes.citations;
       }
 
       const systemInstructionStep1 = `Sei l'Agente 1 (Trigger e Classificatore Multidisciplinare) di una pipeline di Legal Intelligence per uno studio legale.
@@ -584,97 +331,55 @@ ${CLASSIFICATION_JSON_CONTRACT}`;
 
       let parsed: Omit<ClassificationResult, 'fontiWeb' | 'modelUsed'>;
 
-      if (geminiFallback) {
-        let contents: unknown;
-        if (source.mode === 'upload_pdf' && source.fileBase64) {
-          contents = {
-            parts: [
-              {
-                inlineData: {
-                  mimeType: source.mimeType || 'application/pdf',
-                  data: source.fileBase64,
-                },
-              },
-              {
-                text: `Classifica questo documento giuridico/normativo/giurisprudenziale (${source.fileName || 'documento caricato'}). Titolo indicativo: ${source.titolo || 'N/D'}. Individua materia, estremi, ambito soggettivo, quadro precettivo e tutti i precetti principali distinti per OBBLIGO, INDIRIZZO e FACOLTÀ.`,
-              },
-            ],
-          };
-        } else if (source.mode === 'web_search') {
-          contents = `Classifica la seguente novità giuridica o normativa intercettata dalla ricerca web:\n\n${rawResearchText}`;
+      let userContent: string | unknown[];
+      let plugins: Record<string, unknown>[] | undefined;
+
+      if (source.mode === 'upload_pdf' && source.fileBase64) {
+        const isTxt =
+          source.mimeType === 'text/plain' ||
+          (source.fileName || '').toLowerCase().endsWith('.txt');
+
+        if (isTxt) {
+          const decoded = Buffer.from(source.fileBase64, 'base64').toString('utf-8');
+          userContent = `Classifica questo documento giuridico/normativo (${source.fileName || 'documento.txt'}). Titolo indicativo: ${source.titolo || 'N/D'}.\n\nTESTO:\n${decoded}`;
         } else {
-          contents = `Classifica la seguente novità giuridica, normativa o giurisprudenziale:\n\nTITOLO: ${source.titolo}\n\nTESTO:\n${source.testoEstratto}\n\n${
-            source.riferimentiIntegrali
-              ? `RIFERIMENTI INTEGRALI DI CONTESTO:\n${source.riferimentiIntegrali}`
-              : ''
-          }`;
+          userContent = [
+            {
+              type: 'text',
+              text: `Classifica questo documento giuridico/normativo/giurisprudenziale (${source.fileName || 'documento.pdf'}). Titolo indicativo: ${source.titolo || 'N/D'}. Individua materia, estremi, ambito soggettivo, quadro precettivo e tutti i precetti principali distinti per OBBLIGO, INDIRIZZO e FACOLTÀ.`,
+            },
+            {
+              type: 'file',
+              file: {
+                filename: source.fileName || 'documento.pdf',
+                file_data: `data:${source.mimeType || 'application/pdf'};base64,${source.fileBase64}`,
+              },
+            },
+          ];
+          plugins = [{ id: 'file-parser', pdf: { engine: 'pdf-text' } }];
         }
-
-        const structuredResp = await geminiFallback.models.generateContent({
-          model: 'gemini-4-hydrogen',
-          contents: contents as Parameters<typeof geminiFallback.models.generateContent>[0]['contents'],
-          config: {
-            systemInstruction: systemInstructionStep1,
-            responseMimeType: 'application/json',
-            responseSchema: classificationSchema,
-          },
-        });
-
-        parsed = parseJsonSafely<Omit<ClassificationResult, 'fontiWeb' | 'modelUsed'>>(
-          structuredResp.text,
-          'Risposta vuota dal classificatore normativo (Passaggio 1).'
-        );
+      } else if (source.mode === 'web_search') {
+        userContent = `Classifica la seguente novità giuridica o normativa intercettata dalla ricerca web:\n\n${rawResearchText}`;
       } else {
-        let userContent: string | unknown[];
-        let plugins: Record<string, unknown>[] | undefined;
-
-        if (source.mode === 'upload_pdf' && source.fileBase64) {
-          const isTxt =
-            source.mimeType === 'text/plain' ||
-            (source.fileName || '').toLowerCase().endsWith('.txt');
-
-          if (isTxt) {
-            const decoded = Buffer.from(source.fileBase64, 'base64').toString('utf-8');
-            userContent = `Classifica questo documento giuridico/normativo (${source.fileName || 'documento.txt'}). Titolo indicativo: ${source.titolo || 'N/D'}.\n\nTESTO:\n${decoded}`;
-          } else {
-            userContent = [
-              {
-                type: 'text',
-                text: `Classifica questo documento giuridico/normativo/giurisprudenziale (${source.fileName || 'documento.pdf'}). Titolo indicativo: ${source.titolo || 'N/D'}. Individua materia, estremi, ambito soggettivo, quadro precettivo e tutti i precetti principali distinti per OBBLIGO, INDIRIZZO e FACOLTÀ.`,
-              },
-              {
-                type: 'file',
-                file: {
-                  filename: source.fileName || 'documento.pdf',
-                  file_data: `data:${source.mimeType || 'application/pdf'};base64,${source.fileBase64}`,
-                },
-              },
-            ];
-            plugins = [{ id: 'file-parser', pdf: { engine: 'pdf-text' } }];
-          }
-        } else if (source.mode === 'web_search') {
-          userContent = `Classifica la seguente novità giuridica o normativa intercettata dalla ricerca web:\n\n${rawResearchText}`;
-        } else {
-          userContent = `Classifica la seguente novità giuridica, normativa o giurisprudenziale:\n\nTITOLO: ${source.titolo}\n\nTESTO:\n${source.testoEstratto}\n\n${
-            source.riferimentiIntegrali
-              ? `RIFERIMENTI INTEGRALI DI CONTESTO:\n${source.riferimentiIntegrali}`
-              : ''
-          }`;
-        }
-
-        const orResp = await callOpenRouter({
-          modelId,
-          systemInstruction: systemInstructionStep1,
-          userContent,
-          expectJson: true,
-          plugins,
-        });
-
-        parsed = parseJsonSafely<Omit<ClassificationResult, 'fontiWeb' | 'modelUsed'>>(
-          orResp.text,
-          'Risposta vuota dal classificatore normativo (Passaggio 1).'
-        );
+        userContent = `Classifica la seguente novità giuridica, normativa o giurisprudenziale:\n\nTITOLO: ${source.titolo}\n\nTESTO:\n${source.testoEstratto}\n\n${
+          source.riferimentiIntegrali
+            ? `RIFERIMENTI INTEGRALI DI CONTESTO:\n${source.riferimentiIntegrali}`
+            : ''
+        }`;
       }
+
+      const orResp = await callOpenRouter({
+        modelId,
+        systemInstruction: systemInstructionStep1,
+        userContent,
+        expectJson: true,
+        plugins,
+      });
+
+      parsed = parseJsonSafely<Omit<ClassificationResult, 'fontiWeb' | 'modelUsed'>>(
+        orResp.text,
+        'Risposta vuota dal classificatore normativo (Passaggio 1).'
+      );
 
       const result: ClassificationResult = {
         ...parsed,
@@ -714,11 +419,6 @@ ${CLASSIFICATION_JSON_CONTRACT}`;
       }
 
       const modelId = resolveModelId(rawModelId);
-      const hasOpenRouter = Boolean(getOpenRouterKey());
-      const geminiFallback =
-        !hasOpenRouter && modelId === 'google/gemini-4-hydrogen'
-          ? getGeminiClient()
-          : null;
 
       const prompt = `Valuta l'impatto giuridico e operativo della novità classificata nel Passaggio 1 su CIASCUNO dei clienti attivi assistiti dallo studio.
 
@@ -752,37 +452,18 @@ ${IMPACT_JSON_CONTRACT}`;
 
       let parsed: Omit<PortfolioImpactEvaluation, 'noteProfessionista' | 'modelUsed'>;
 
-      if (geminiFallback) {
-        const response = await geminiFallback.models.generateContent({
-          model: 'gemini-4-hydrogen',
-          contents: prompt,
-          config: {
-            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-            systemInstruction: systemInstructionStep2,
-            responseMimeType: 'application/json',
-            responseSchema: impactSchema,
-          },
-        });
-        parsed = parseJsonSafely<
-          Omit<PortfolioImpactEvaluation, 'noteProfessionista' | 'modelUsed'>
-        >(
-          response.text,
-          'Risposta vuota dalla valutazione d’impatto (Passaggio 2).'
-        );
-      } else {
-        const orResp = await callOpenRouter({
-          modelId,
-          systemInstruction: systemInstructionStep2,
-          userContent: prompt,
-          expectJson: true,
-        });
-        parsed = parseJsonSafely<
-          Omit<PortfolioImpactEvaluation, 'noteProfessionista' | 'modelUsed'>
-        >(
-          orResp.text,
-          'Risposta vuota dalla valutazione d’impatto (Passaggio 2).'
-        );
-      }
+      const orResp = await callOpenRouter({
+        modelId,
+        systemInstruction: systemInstructionStep2,
+        userContent: prompt,
+        expectJson: true,
+      });
+      parsed = parseJsonSafely<
+        Omit<PortfolioImpactEvaluation, 'noteProfessionista' | 'modelUsed'>
+      >(
+        orResp.text,
+        'Risposta vuota dalla valutazione d’impatto (Passaggio 2).'
+      );
 
       const evaluation: PortfolioImpactEvaluation = {
         ...parsed,
@@ -821,11 +502,6 @@ ${IMPACT_JSON_CONTRACT}`;
 
       const activeClients = clients.filter((c) => c.attivo);
       const modelId = resolveModelId(rawModelId);
-      const hasOpenRouter = Boolean(getOpenRouterKey());
-      const geminiFallback =
-        !hasOpenRouter && modelId === 'google/gemini-4-hydrogen'
-          ? getGeminiClient()
-          : null;
 
       const prompt = `Genera il pacchetto completo di deliverable differenziati a partire dai passaggi precedenti validati dal giurista.
 
@@ -865,33 +541,16 @@ ${DELIVERABLES_JSON_CONTRACT}`;
 
       let parsed: Omit<DeliverablesPackage, 'modelUsed'>;
 
-      if (geminiFallback) {
-        const response = await geminiFallback.models.generateContent({
-          model: 'gemini-4-hydrogen',
-          contents: prompt,
-          config: {
-            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-            systemInstruction: systemInstructionStep3,
-            responseMimeType: 'application/json',
-            responseSchema: deliverablesSchema,
-          },
-        });
-        parsed = parseJsonSafely<Omit<DeliverablesPackage, 'modelUsed'>>(
-          response.text,
-          'Risposta vuota nella generazione dei deliverable (Passaggio 3).'
-        );
-      } else {
-        const orResp = await callOpenRouter({
-          modelId,
-          systemInstruction: systemInstructionStep3,
-          userContent: prompt,
-          expectJson: true,
-        });
-        parsed = parseJsonSafely<Omit<DeliverablesPackage, 'modelUsed'>>(
-          orResp.text,
-          'Risposta vuota nella generazione dei deliverable (Passaggio 3).'
-        );
-      }
+      const orResp = await callOpenRouter({
+        modelId,
+        systemInstruction: systemInstructionStep3,
+        userContent: prompt,
+        expectJson: true,
+      });
+      parsed = parseJsonSafely<Omit<DeliverablesPackage, 'modelUsed'>>(
+        orResp.text,
+        'Risposta vuota nella generazione dei deliverable (Passaggio 3).'
+      );
 
       const deliverables: DeliverablesPackage = {
         ...parsed,

@@ -57,7 +57,6 @@ Nella cartella principale del progetto è presente il file **`.env`** (già escl
 
 ```env
 OPENROUTER_API_KEY="sk-or-v1-LA_TUA_CHIAVE_OPENROUTER"
-GEMINI_API_KEY=""
 APP_URL="http://localhost:3000"
 ```
 
@@ -123,7 +122,6 @@ In **Project Settings → Environment Variables**, aggiungi:
 | Variabile | Obbligatoria | Valore |
 | :--- | :--- | :--- |
 | `OPENROUTER_API_KEY` | Sì | Chiave API OpenRouter |
-| `GEMINI_API_KEY` | No | Chiave Gemini, se si vuole abilitare il fallback |
 | `APP_URL` | Consigliata | URL pubblico dell'app, ad esempio `https://<dominio-vercel>` |
 
 Imposta le chiavi per gli ambienti **Production**, **Preview** e/o **Development** che intendi usare. Mantieni le chiavi solo lato server: non usare il prefisso `VITE_` e non inserirle nel codice o in Git. Dopo aver modificato le variabili, avvia un nuovo deploy.
